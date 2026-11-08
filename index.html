@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#070b18">
+  <meta name="description" content="CUBESTORM ULTIMATE — a customizable Three.js arcade survival adventure with 24 sectors, bosses, physics, challenges and a full garage.">
+  <title>CUBESTORM ULTIMATE — Beyond the Dimension</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <main id="gameRoot">
+    <div id="sceneMount" aria-label="3D game arena"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <section id="hud" class="hud hidden" aria-live="polite">
+      <div class="hud-top">
+        <article class="hud-card"><span class="hud-label">SCORE</span><strong id="scoreValue">000000</strong><small id="scoreGain"></small></article>
+        <article class="hud-card hud-stage"><span id="stageBiome" class="hud-label">NEON HARBOR</span><strong>SECTOR <span id="stageValue">01</span></strong><small id="modeLabel">CAMPAIGN</small></article>
+        <article class="hud-card hud-best"><span class="hud-label">PERSONAL BEST</span><strong id="bestValue">000000</strong><button id="pauseButton" class="icon-btn" title="Pause (P)" aria-label="Pause">Ⅱ</button></article>
+      </div>
+      <div class="hud-left panel-glass">
+        <div class="stat-line"><span class="stat-icon heart">♥</span><strong id="livesValue">♥ ♥ ♥</strong></div>
+        <div class="stat-line"><span class="stat-icon coin">◆</span><strong id="coinsValue">0 COINS</strong></div>
+        <div class="stat-line"><span class="stat-icon bolt">ϟ</span><strong id="comboValue">COMBO ×1.0</strong></div>
+        <div class="stat-line"><span class="stat-icon">◎</span><strong id="speedValue">0 KM/H</strong></div>
+        <div id="powerStatus" class="power-status">NO ACTIVE MODULES</div>
+      </div>
+      <div class="hud-right">
+        <article id="missionCard" class="mission-card panel-glass">
+          <div class="split-label"><span>ACTIVE OBJECTIVE</span><b id="missionReward">+120</b></div>
+          <strong id="missionName">THREAD THE NEEDLE</strong>
+          <div class="meter"><i id="missionFill"></i></div>
+          <small id="missionProgress">0 / 9 complete</small>
+        </article>
+        <article class="ammo-card panel-glass"><strong id="ammoValue">12 / 12</strong><small>ENERGY CELLS · Q RELOAD</small></article>
+      </div>
+      <div class="stage-progress"><i id="stageProgressFill"></i></div>
+      <article id="bossPanel" class="boss-panel panel-glass hidden"><div class="split-label"><span>SECTOR GUARDIAN</span><b id="bossHealthText">100%</b></div><div class="meter"><i id="bossHealthFill"></i></div></article>
+      <article id="radar" class="radar panel-glass"><span class="hud-label">THREAT RADAR</span><div class="radar-lanes"><i></i><i></i><i></i><b id="radarPlayer"></b><span id="radarThreats"></span></div><small id="radarText">CLEAR AHEAD</small></article>
+      <div id="fpsCounter" class="fps-counter">60 FPS</div>
+      <div id="crosshair" class="crosshair"><i></i><b></b></div>
+      <div id="worldMessage" class="world-message"></div>
+      <div id="toast" class="toast"></div>
+    </section>
+
+    <section id="touchControls" class="touch-controls hidden" aria-label="Touch controls">
+      <div class="touch-movement"><button data-hold="left" aria-label="Move left">◀</button><button data-hold="right" aria-label="Move right">▶</button></div>
+      <div class="touch-actions"><button data-action="shoot">FIRE</button><button data-action="dash">DASH</button><button data-action="jump">JUMP</button></div>
+    </section>
+
+    <section id="menuOverlay" class="menu-overlay">
+      <div class="menu-backdrop"></div>
+      <div class="menu-shell">
+        <header class="menu-header">
+          <div class="brand-lockup"><div class="brand-mark"><span></span><i></i><b></b></div><div><span class="brand-kicker">ARCADE DIMENSION / ULTIMATE</span><div class="brand-name">CUBE<span>STORM</span></div></div></div>
+          <div class="header-right"><span class="online-dot"></span> LOCAL PROFILE <i></i> BUILD 3.0</div>
+        </header>
+
+        <section id="homeScreen" class="menu-screen active">
+          <div class="hero-copy">
+            <div class="eyebrow"><span></span> THE DIMENSION HAS EVOLVED</div>
+            <h1>OWN THE<br><em>STORM.</em></h1>
+            <p>Master your momentum. Rebuild your machine. Conquer 24 dimensions.</p>
+            <div class="hero-actions"><button id="continueButton" class="primary-button">▶ START CAMPAIGN</button><button id="levelButton" class="secondary-button">SELECT SECTOR ↗</button></div>
+            <div class="mode-grid">
+              <button class="mode-card selected" data-mode="campaign"><b>◈ CAMPAIGN</b><small>24 sectors · objectives · guardians</small></button>
+              <button class="mode-card" data-mode="endless"><b>∞ ENDLESS</b><small>One run. No finish line.</small></button>
+              <button class="mode-card" data-mode="rush"><b>ϟ TIME RUSH</b><small>Score big before the clock ends.</small></button>
+              <button class="mode-card" data-mode="free"><b>✧ FREEDOM</b><small>Explore and experiment.</small></button>
+            </div>
+            <nav class="quick-nav" aria-label="Game menus">
+              <button id="settingsButton">⚙ SETTINGS</button>
+              <button id="controlsButton">⌨ CONTROLS</button>
+              <button id="garageButton">◈ GARAGE</button>
+              <button id="achievementsButton">✦ ACHIEVEMENTS</button>
+            </nav>
+          </div>
+          <aside class="profile-panel panel-glass">
+            <div class="split-label"><span>OPERATOR PROFILE</span><b class="saved-label">● SAVED LOCALLY</b></div>
+            <div class="profile-cube"><div></div></div>
+            <h2>DIMENSION RUNNER</h2><p id="rankLabel">ROOKIE EXPLORER</p>
+            <div class="profile-stats"><div><small>BEST SCORE</small><strong id="menuBest">0</strong></div><div><small>COINS</small><strong id="menuWallet">0</strong></div><div><small>OPEN SECTORS</small><strong id="menuUnlocked">1 / 24</strong></div></div>
+            <label class="difficulty-label">DIFFICULTY<select id="difficultySelect"><option value="story">Story</option><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option><option value="nightmare">Nightmare</option></select></label>
+          </aside>
+          <footer class="menu-footer"><span>WASD / ARROWS MOVE <i>•</i> SPACE JUMP <i>•</i> SHIFT DASH</span><span>THREE.JS · WEBGL · LOCAL SAVE</span></footer>
+        </section>
+
+        <section id="levelScreen" class="menu-screen sub-screen">
+          <div class="sub-heading"><div><div class="eyebrow"><span></span> EXPLORE THE MULTIVERSE</div><h2>SECTOR <em>SELECT</em></h2><p>24 handcrafted theme profiles with procedural scenery and escalating encounters.</p></div><button class="back-button" data-back="homeScreen">← BACK</button></div>
+          <div id="levelGrid" class="level-grid"></div>
+          <div class="sub-footer"><span id="levelHint">SECTOR 01 READY</span><button id="startSelected" class="primary-button">DEPLOY TO SECTOR ↗</button></div>
+        </section>
+
+        <section id="settingsScreen" class="menu-screen sub-screen">
+          <div class="sub-heading"><div><div class="eyebrow"><span></span> TUNE EVERY DETAIL</div><h2>GAME <em>SETTINGS</em></h2><p>Live settings are saved automatically on this device.</p></div><button class="back-button" data-back="homeScreen">← BACK</button></div>
+          <div id="settingsMount" class="settings-grid"></div>
+          <div class="sub-footer"><span>SETTINGS APPLY LIVE · LOCAL STORAGE</span><button id="resetSettings" class="secondary-button">RESET ALL SETTINGS</button></div>
+        </section>
+
+        <section id="garageScreen" class="menu-screen sub-screen">
+          <div class="sub-heading"><div><div class="eyebrow"><span></span> YOUR CUBE. YOUR IDENTITY.</div><h2>THE <em>GARAGE</em></h2><p>Unlock visual styles with coins earned during your runs.</p></div><button class="back-button" data-back="homeScreen">← BACK</button></div>
+          <div class="garage-layout"><div class="garage-preview panel-glass"><div id="garageCube" class="garage-cube"></div><strong id="skinName">CYAN PULSE</strong><small id="skinDescription">A clean energy finish.</small></div><div class="garage-options"><div id="skinGrid" class="skin-grid"></div><div class="garage-actions"><span>WALLET: <b id="garageWallet">0</b> ◆</span><button id="equipSkin" class="primary-button">EQUIP STYLE</button></div></div></div>
+        </section>
+
+        <section id="achievementsScreen" class="menu-screen sub-screen">
+          <div class="sub-heading"><div><div class="eyebrow"><span></span> PROVE YOUR SKILL</div><h2>HALL OF <em>FAME</em></h2><p>Milestones are tracked across your local profile.</p></div><button class="back-button" data-back="homeScreen">← BACK</button></div>
+          <div id="achievementGrid" class="achievement-grid"></div>
+        </section>
+
+        <section id="controlsScreen" class="menu-screen sub-screen">
+          <div class="sub-heading"><div><div class="eyebrow"><span></span> LEARN THE SYSTEM</div><h2>CONTROL <em>ROOM</em></h2><p>Keyboard, mouse, gamepad and touch support.</p></div><button class="back-button" data-back="homeScreen">← BACK</button></div>
+          <div class="control-grid">
+            <div><kbd>W A S D</kbd><span>MOVE · AIR CONTROL</span></div><div><kbd>ARROWS</kbd><span>ALTERNATIVE MOVEMENT</span></div>
+            <div><kbd>SPACE</kbd><span>JUMP · DOUBLE JUMP</span></div><div><kbd>SHIFT</kbd><span>DASH · TEMPORARY EVADE</span></div>
+            <div><kbd>F / CLICK</kbd><span>FIRE ENERGY BOLTS</span></div><div><kbd>Q</kbd><span>RELOAD ENERGY CELLS</span></div>
+            <div><kbd>C</kbd><span>SWITCH CAMERA VIEW</span></div><div><kbd>P / ESC</kbd><span>PAUSE / RESUME</span></div>
+            <div><kbd>M</kbd><span>MUTE / UNMUTE</span></div><div><kbd>R</kbd><span>RESTART RUN</span></div>
+            <div><kbd>F3</kbd><span>FPS DISPLAY</span></div><div><kbd>K</kbd><span>CHANGE EQUIPPED STYLE IN MENU</span></div>
+            <div><kbd>GAMEPAD</kbd><span>LEFT STICK · A JUMP · B DASH · RT FIRE</span></div><div><kbd>TOUCH</kbd><span>ON-SCREEN MOVE / JUMP / DASH / FIRE</span></div>
+          </div>
+          <div class="sub-footer"><span>TIP: USE YOUR SECOND JUMP TO CORRECT A BAD LANDING.</span></div>
+        </section>
+
+        <section id="pauseScreen" class="menu-screen pause-screen">
+          <div class="pause-emblem">Ⅱ</div><div class="eyebrow"><span></span> RUN SUSPENDED</div><h2>TAKE A <em>BREATHER.</em></h2><p>Your progress in this run is paused.</p>
+          <div class="pause-actions"><button id="resumeButton" class="primary-button">▶ RESUME RUN</button><button id="restartButton" class="secondary-button">↻ RESTART RUN</button><button id="quitButton" class="text-button">RETURN TO MAIN MENU</button></div>
+        </section>
+
+        <section id="resultScreen" class="menu-screen pause-screen">
+          <div class="eyebrow"><span></span> RUN DEBRIEF</div><h2 id="resultTitle">RUN <em>COMPLETE.</em></h2><p id="resultMessage">Your run report is ready.</p>
+          <div class="result-stats"><div><small>FINAL SCORE</small><strong id="resultScore">0</strong></div><div><small>COINS EARNED</small><strong id="resultCoins">0</strong></div><div><small>ENEMIES CLEARED</small><strong id="resultKills">0</strong></div><div><small>BEST COMBO</small><strong id="resultCombo">×0</strong></div></div>
+          <div class="pause-actions"><button id="resultRetry" class="primary-button">↻ PLAY AGAIN</button><button id="resultMenu" class="secondary-button">⌂ MAIN MENU</button></div>
+        </section>
+      </div>
+    </section>
+
+    <div id="loadingScreen" class="loading-screen"><div class="loading-logo">CUBE<span>STORM</span></div><div class="loading-track"><i></i></div><small>INITIALIZING ULTIMATE DIMENSION…</small></div>
+    <div id="fatalError" class="fatal-error hidden"><strong>3D ENGINE COULD NOT START</strong><p id="fatalMessage">Check WebGL and reload the game.</p></div>
+  </main>
+</body>
+</html>
